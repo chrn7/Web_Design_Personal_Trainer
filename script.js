@@ -47,26 +47,8 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Contact Form Handling
-const contactForm = document.querySelector('.contact-form form');
-if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = new FormData(this);
-        const formObject = {};
-        formData.forEach((value, key) => {
-            formObject[key] = value;
-        });
-        
-        // Show success message (in a real application, you would send this to a server)
-        showNotification('¡Gracias por tu consulta! Te contactaremos pronto.', 'success');
-        
-        // Reset form
-        this.reset();
-    });
-}
+// Contact Form Handling - SERÁ MANEJADO MÁS ABAJO CON VALIDACIÓN COMPLETA
+console.log('Cargando script.js...');
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -347,38 +329,119 @@ document.head.appendChild(loadingStyle);
 
 // Form validation
 function validateForm(form) {
-    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
-    let isValid = true;
+    console.log('=== INICIANDO VALIDACIÓN ===');
     
-    inputs.forEach(input => {
-        if (!input.value.trim()) {
+    const inputs = form.querySelectorAll('input[required]');
+    const selects = form.querySelectorAll('select[required]');
+    const textareas = form.querySelectorAll('textarea[required]');
+    
+    let isValid = true;
+    let invalidFields = [];
+    
+    console.log(`Encontrados: ${inputs.length} inputs, ${selects.length} selects, ${textareas.length} textareas requeridos`);
+    
+    // Validar inputs de texto
+    inputs.forEach((input, index) => {
+        const value = input.value.trim();
+        const fieldName = input.name || input.placeholder || input.tagName;
+        
+        console.log(`Input ${index + 1} (${fieldName}): "${value}" - Longitud: ${value.length}`);
+        
+        if (!value) {
             isValid = false;
+            invalidFields.push(fieldName);
             input.style.borderColor = '#f44336';
             input.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.3)';
+            console.log(`❌ Input ${fieldName} está vacío`);
         } else {
             input.style.borderColor = '';
             input.style.boxShadow = '';
+            console.log(`✅ Input ${fieldName} válido`);
         }
     });
     
-    // Email validation
-    const emailInput = form.querySelector('input[type="email"]');
-    if (emailInput && emailInput.value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailInput.value)) {
+    // Validar selects
+    selects.forEach((select, index) => {
+        const value = select.value;
+        const fieldName = select.name || 'select';
+        
+        console.log(`Select ${index + 1} (${fieldName}): "${value}"`);
+        
+        if (!value || value === '') {
             isValid = false;
+            invalidFields.push(fieldName);
+            select.style.borderColor = '#f44336';
+            select.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.3)';
+            console.log(`❌ Select ${fieldName} no seleccionado`);
+        } else {
+            select.style.borderColor = '';
+            select.style.boxShadow = '';
+            console.log(`✅ Select ${fieldName} válido`);
+        }
+    });
+    
+    // Validar textareas
+    textareas.forEach((textarea, index) => {
+        const value = textarea.value.trim();
+        const fieldName = textarea.name || textarea.placeholder || 'textarea';
+        
+        console.log(`Textarea ${index + 1} (${fieldName}): "${value}" - Longitud: ${value.length}`);
+        
+        if (!value) {
+            isValid = false;
+            invalidFields.push(fieldName);
+            textarea.style.borderColor = '#f44336';
+            textarea.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.3)';
+            console.log(`❌ Textarea ${fieldName} está vacío`);
+        } else {
+            textarea.style.borderColor = '';
+            textarea.style.boxShadow = '';
+            console.log(`✅ Textarea ${fieldName} válido`);
+        }
+    });
+    
+    // Validación específica del email
+    const emailInput = form.querySelector('input[type="email"]');
+    if (emailInput && emailInput.value.trim()) {
+        const emailValue = emailInput.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const isEmailValid = emailRegex.test(emailValue);
+        
+        console.log(`Email encontrado: "${emailValue}"`);
+        console.log(`Email válido según regex: ${isEmailValid}`);
+        
+        if (!isEmailValid) {
+            isValid = false;
+            invalidFields.push('email format');
             emailInput.style.borderColor = '#f44336';
             emailInput.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.3)';
+            console.log(`❌ Formato de email inválido`);
+        } else {
+            console.log(`✅ Email formato válido`);
         }
     }
+    
+    console.log(`=== RESULTADO VALIDACIÓN ===`);
+    console.log(`Válido: ${isValid}`);
+    console.log(`Campos inválidos: [${invalidFields.join(', ')}]`);
+    console.log(`===============================`);
     
     return isValid;
 }
 
 // Enhanced form submission
+const contactForm = document.querySelector('.contact-form form');
+console.log('Formulario encontrado:', contactForm);
+
 if (contactForm) {
+    console.log('Agregando event listener al formulario');
+    
     contactForm.addEventListener('submit', function(e) {
+        console.log('=== FORMULARIO ENVIADO ===');
         e.preventDefault();
+        
+        // Debug: mostrar el formulario que se está validando
+        console.log('Formulario recibido en event listener:', this);
         
         if (!validateForm(this)) {
             showNotification('Por favor, completa todos los campos correctamente.', 'error');
@@ -391,12 +454,196 @@ if (contactForm) {
         submitBtn.textContent = 'Enviando...';
         submitBtn.disabled = true;
         
-        // Simulate API call
+        // Get form data
+        const formData = new FormData(this);
+        const nombre = formData.get('nombre');
+        const email = formData.get('email');
+        const telefono = formData.get('telefono');
+        const objetivo = formData.get('objetivo');
+        const mensaje = formData.get('mensaje');
+        
+        // Create email content
+        const emailSubject = 'Nueva consulta desde AUGE - ' + nombre;
+        const emailBody = `Hola Emiliano,
+
+Has recibido una nueva consulta desde tu sitio web AUGE:
+
+DATOS DEL CLIENTE:
+- Nombre: ${nombre}
+- Email: ${email}
+- Teléfono: ${telefono}
+- Objetivo: ${objetivo}
+
+MENSAJE:
+${mensaje}
+
+---
+Este email fue generado automáticamente desde el formulario de contacto de AUGE Entrenamientos.`;
+        
+        const mailtoLink = `mailto:emiliano.grella@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // Open email client
+        window.location.href = mailtoLink;
+        
+        // Reset form after a short delay
         setTimeout(() => {
-            showNotification('¡Gracias por tu consulta! Te contactaremos en las próximas 24 horas.', 'success');
+            showNotification('Se abrió tu cliente de email para enviar la consulta.', 'success');
             this.reset();
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
-        }, 2000);
+        }, 1000);
     });
 }
+
+// WhatsApp floating button scroll animation
+let isScrolling = false;
+let scrollTimer = null;
+
+window.addEventListener('scroll', () => {
+    const whatsappButton = document.querySelector('.whatsapp-float');
+    
+    if (whatsappButton) {
+        // Add scrolling class
+        whatsappButton.classList.add('scrolling');
+        
+        // Clear existing timer
+        clearTimeout(scrollTimer);
+        
+        // Remove scrolling class after scroll stops
+        scrollTimer = setTimeout(() => {
+            whatsappButton.classList.remove('scrolling');
+        }, 150);
+    }
+});
+
+// Add click animation to WhatsApp button
+document.addEventListener('DOMContentLoaded', () => {
+    const whatsappButton = document.querySelector('.whatsapp-float');
+    
+    if (whatsappButton) {
+        whatsappButton.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    }
+});
+
+// Gallery Lightbox Functionality
+document.addEventListener('DOMContentLoaded', () => {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxCaption = document.getElementById('lightbox-caption-text');
+    const closeBtn = document.querySelector('.lightbox-close');
+    const prevBtn = document.getElementById('lightbox-prev');
+    const nextBtn = document.getElementById('lightbox-next');
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    
+    let currentImageIndex = 0;
+    const images = Array.from(document.querySelectorAll('.gallery-image'));
+    
+    // Open lightbox when clicking on gallery items
+    galleryItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            currentImageIndex = index;
+            openLightbox();
+        });
+    });
+    
+    function openLightbox() {
+        const currentImage = images[currentImageIndex];
+        lightboxImage.src = currentImage.src;
+        lightboxImage.alt = currentImage.alt;
+        lightboxCaption.textContent = currentImage.dataset.caption || currentImage.alt;
+        
+        // Update navigation buttons
+        prevBtn.disabled = currentImageIndex === 0;
+        nextBtn.disabled = currentImageIndex === images.length - 1;
+        
+        lightbox.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    function closeLightbox() {
+        lightbox.classList.remove('show');
+        document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+    
+    // Close lightbox events
+    closeBtn.addEventListener('click', closeLightbox);
+    
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('show')) return;
+        
+        switch(e.key) {
+            case 'Escape':
+                closeLightbox();
+                break;
+            case 'ArrowLeft':
+                if (currentImageIndex > 0) {
+                    currentImageIndex--;
+                    openLightbox();
+                }
+                break;
+            case 'ArrowRight':
+                if (currentImageIndex < images.length - 1) {
+                    currentImageIndex++;
+                    openLightbox();
+                }
+                break;
+        }
+    });
+    
+    // Navigation buttons
+    prevBtn.addEventListener('click', () => {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+            openLightbox();
+        }
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        if (currentImageIndex < images.length - 1) {
+            currentImageIndex++;
+            openLightbox();
+        }
+    });
+    
+    // Touch/swipe support for mobile
+    let startX = 0;
+    let endX = 0;
+    
+    lightboxImage.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+    });
+    
+    lightboxImage.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].clientX;
+        handleSwipe();
+    });
+    
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = startX - endX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0 && currentImageIndex < images.length - 1) {
+                // Swipe left - next image
+                currentImageIndex++;
+                openLightbox();
+            } else if (diff < 0 && currentImageIndex > 0) {
+                // Swipe right - previous image
+                currentImageIndex--;
+                openLightbox();
+            }
+        }
+    }
+});
