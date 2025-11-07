@@ -233,11 +233,11 @@ body {
     width: 400px;
     height: 400px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ff6600, #ff8533);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
     position: relative;
 }
 
